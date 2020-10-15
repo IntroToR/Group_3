@@ -20,6 +20,7 @@ library(ggplot2)
 library(dplyr)
 library(viridis)
 library(ggridges)
+library(ggpmisc)
 lyrics_swift <- fread("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-29/taylor_swift_lyrics.csv", header =T)
 
 ```
@@ -33,6 +34,8 @@ lyrics_swift <- mutate(lyrics_swift, total_words = sapply(strsplit(lyrics_swift$
 total_word_plot <- ggplot(lyrics_swift, aes(x=total_words, y=Album, fill = stat(x))) + geom_density_ridges_gradient(scale = 1.2, rel_min_height = 0.01) +
   scale_fill_viridis_c(name = "Total Words", option = "C") + ylab("Albums") + xlab("Total Words") + ggtitle("Total Words by Album")
 total_word_plot
+#Save the plot
+ggsave(filename = "Total Words by Album", plot = total_word_plot, device = "png")
 ```
 
 __2. Statistical data for total words__
@@ -79,7 +82,10 @@ pronouns <- lyrics_swift %>%
 
 #Make the graph 
 pronoun_plot <- ggplot(pronouns, aes(x=Title, y=values, size = values)) + geom_point(alpha =0.7, aes(color = pronoun_type)) + scale_size(range = c(.1, 3)) + ggtitle("Use of Pronouns by Type") + ylab("Total Number of Each Pronoun") + xlab("Songs") + theme(legend.position="bottom") + theme(axis.text.x=element_blank())
-pronoun_plot + facet_grid(type~Album, scales ="free_y")
+pronoun_plot1<-pronoun_plot + facet_grid(type~Album, scales ="free_y")
+pronoun_plot1
+#Save the graph
+ggsave(filename = "Use of Pronouns by Type", plot = pronoun_plot1, device = "png")
 ```
 
 __2. Statistical data for pronouns__
@@ -149,18 +155,27 @@ temp<-cbind(temp,wpm)
 __7. Plot the new variable__
 ```{r}
 #Plot wpm for each song in each album
-ggplot(temp,aes(x=temp$Title,y=temp$wpm))+
+wpm_song <- ggplot(temp,aes(x=temp$Title,y=temp$wpm))+
   geom_bar(stat="identity")+
   facet_wrap(vars(Album), scales ="free")+
   theme(axis.text.x = element_blank())+
   ggtitle("Words Per Minute by Song")+
   labs(y = "WPM", x = "Songs of Each Album")
+wpm_song
+```
+
+__Second plot__ 
+```{r}
 #Plot wpm for each album
-ggplot(temp,aes(x=temp$Album,y=temp$wpm))+
+wpm_album <- ggplot(temp,aes(x=temp$Album,y=temp$wpm))+
   geom_boxplot()+
   ggtitle("Words Per Minute by Album") + 
   ylab("Words per Minute")+xlab("Album")+
   geom_point(stat = "summary", fun="mean", color="red", size =2)
+wpm_album
+#Save the plots. Plots saved for these two are extremely small and barely visible so I manually adjusted the width and height
+ggsave("Words Per Minute by Song", plot = wpm_song, device = png, width = 1000, height = 800, limitsize = F)
+ggsave("Words Per Minute by Album", plot = wpm_album, device = png, width = 1000, height = 800, limitsize = F)
 ```
 
 __8. Make some statistical analysis on wpm__
@@ -190,11 +205,17 @@ print(lm_1)
 anova(lm_1)
 summary(lm_1)
 #make a plot of the regression
-ggplot(temp,aes(y = wpm, x = Length))+
+WPM_Length <- ggplot(temp,aes(y = wpm, x = Length))+
   geom_point()+
-  geom_smooth(method = lm, se = F)+
-  ggtitle("Wpm versus song length")+
-  labs(x = "Song Length", y = "Wpm")
+  geom_smooth(method = lm, se = F, color = "black")+
+  ggtitle("WPM versus Song Length")+
+  labs(x = "Song Length", y = "Wpm")+
+  stat_poly_eq(formula = temp$wpm~temp$Length,
+               aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
+               parse = T)
+WPM_Length
+#Save the plot. Again the plot saved is very small so I adjusted width and height
+ggsave(filename = "WPM versus Song Length", plot = WPM_Length, device = png, limitsize = F, width = 1000, height = 800)
 ```
 
 __9. Save mean of wpm as a text file__
@@ -202,6 +223,6 @@ __9. Save mean of wpm as a text file__
 #Subset variables album and mean and save as a text file
 stat_wpm%>%
   select(Album, mean_wpm)%>%
-  write.table(file = "Mean_wpm_albums", sep = "   ", quote = F)
+  write.table(file = "Mean_wpm_albums", sep = "   ", quote = F, )
 ```
 

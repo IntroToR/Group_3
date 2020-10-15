@@ -1,0 +1,33 @@
+Album   type   mean_pronouns
+1   1989   female   1.33333333333333
+2   1989   I   30.0333333333333
+3   1989   male   14.4666666666667
+4   1989   non binary   1.1
+5   Fearless   female   2.69444444444444
+6   Fearless   I   19.6944444444444
+7   Fearless   male   12.9722222222222
+8   Fearless   non binary   0.444444444444444
+9   folklore   female   2.5625
+10   folklore   I   18.09375
+11   folklore   male   12.40625
+12   folklore   non binary   0.625
+13   Lover   female   1.97222222222222
+14   Lover   I   23.2222222222222
+15   Lover   male   12.4166666666667
+16   Lover   non binary   0.333333333333333
+17   Red   female   2.68421052631579
+18   Red   I   20.0526315789474
+19   Red   male   11.2894736842105
+20   Red   non binary   0.526315789473684
+21   reputation   female   2.13333333333333
+22   reputation   I   27.3
+23   reputation   male   15.2333333333333
+24   reputation   non binary   1.1
+25   Speak Now   female   2.67647058823529
+26   Speak Now   I   21.4117647058824
+27   Speak Now   male   14.7941176470588
+28   Speak Now   non binary   0.823529411764706
+29   Taylor Swift   female   1.89285714285714
+30   Taylor Swift   I   12.5714285714286
+31   Taylor Swift   male   10.7142857142857
+32   Taylor Swift   non binary   0.107142857142857

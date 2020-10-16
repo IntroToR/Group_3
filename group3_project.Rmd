@@ -1,7 +1,7 @@
 ---
 title: "CPSC 441 Group Project Group3"
 author: "Andrea Dest, Steven Krauklis, and Shujie Wu"
-date: "10/5/2020"
+date: "10/16/2020"
 output: html_document
 ---
 
@@ -20,12 +20,15 @@ library(ggplot2)
 library(dplyr)
 library(viridis)
 library(ggridges)
+library(lubridate)
 library(ggpmisc)
 lyrics_swift <- fread("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-29/taylor_swift_lyrics.csv", header =T)
 
 ```
 
 ## First variable: Total words in each album
+__We would like to see how lines-intensive are Taylor's songs and how that differs among albums.__
+
 __1. Create the new variable total words and make a ridgeline plot to show number of words in each album__
 ```{r}
 #Count the total words in each song and make a new variable in the table
@@ -37,6 +40,7 @@ total_word_plot
 #Save the plot
 ggsave(filename = "Total Words by Album", plot = total_word_plot, device = "png")
 ```
+__The plot shows the distribution of words in each album.__
 
 __2. Statistical data for total words__
 ```{r}
@@ -47,9 +51,11 @@ stat_words<-lyrics_swift%>%
             variance_words = var(total_words), 
             sd_words = sd(total_words),
             median_words = median(total_words),
-            range_words = max(total_words)-min(total_words))
+            range_words = max(total_words)-min(total_words))%>%
+  arrange(mean_words)
 print(stat_words)
 ```
+__From the table we can see that by average "reputation" has the most words, "Taylor Swift" has the least words, and "1989" is the most diverse in words numbers.__
 
 __3. Save mean for total words as a text file__
 ```{r}
@@ -61,7 +67,9 @@ stat_words%>%
 
 
 ## Second variable: Different types of pronouns in each album
-__1. Make a graph to visualize pronouns used in each album and descriptive statistics__
+__Other than the total words, we would like to see how Taylor uses different pronouns in her albums, and which pronoun is her favorite.__
+
+__1. Data manipulation for counting pronouns and form a new table. Make a graph for visualization__
 ```{r}
 #Count each type of pronouns
 pronouns <- lyrics_swift %>%
@@ -87,6 +95,7 @@ pronoun_plot1
 #Save the graph
 ggsave(filename = "Use of Pronouns by Type", plot = pronoun_plot1, device = "png")
 ```
+__The graph shows the use of different pronouns in different albums. Pronouns are grouped by four different types:"I", "Female", "Male", "Non-binary".__
 
 __2. Statistical data for pronouns__
 ```{r}
@@ -97,9 +106,11 @@ stat_pronouns<-pronouns%>%
             var_pronouns = var(values), 
             sd_pronouns = sd(values),
             median_pronouns = median(values),
-            range_pronouns = max(values)-min(values))
+            range_pronouns = max(values)-min(values))%>%
+  arrange(mean_pronouns)
 print(stat_pronouns)
 ```
+__The data shows that "I" is being used the most. The second place is taken by "male" pronouns. "female" comes in third and "non-binary" is in the last.__
 
 __3. Save mean of each pronouns as a text file__
 ```{r}
@@ -110,15 +121,17 @@ stat_pronouns%>%
 ```
 
 
-## Third Variable: Song lengths and writers taken from album notes via wikipedia
-__1. Read song lengths data__
+## Third Variable: Words per minute of each album. 
+__At last, knowing the total words cannot best indicate the how word-intense are Taylor's songs due to different lengths of each song. Therefore we introduce this variable to look at the words per minute and how words/minute of songs written by Taylor along differ from that written by Taylor with other writers.__
+
+__1. Read data. Song lengths and writers taken from album notes via wikipedia__
 ```{r}
 tdisc<-read.csv("https://raw.githubusercontent.com/andreakdest/GROUP3/main/Tswift%20-%20Sheet1.csv")
 ```
 
 __2. Get song names fixed__
 ```{r}
-#fix apostrophe error
+#fix apostrophe error so that we can combine two tables later successfully
 lyrics_swift$Title<-gsub("â€™","'",lyrics_swift$Title)
 
 #add quotations/remove case to song titles
@@ -128,20 +141,19 @@ ls$Title<-tolower(ls$Title)
 ls$Title<-paste0(v = paste0('"', ls$Title, '"'))
 ```
 
-__3. Look at which match/dont match__
+__3. Look at which match/dont match between the two tables__
 ```{r}
-intersect(ls$Title,tdisc$Title)
-setdiff(tdisc$Title,ls$Title)
+intersect<-intersect(ls$Title,tdisc$Title)
+setdiff<-setdiff(tdisc$Title,ls$Title)
 ```
 
-__4. Combine tables we have so far__
+__4. Combine the two tables by Title we have so far__
 ```{r}
 temp<-merge.data.table(ls,tdisc, by=c("Title"))
 ```
 
 __5. Get rid of the units in time length__
 ```{r}
-library(lubridate)
 temp$Length<-ms(temp$Length)
 temp$Length<-as.numeric(as.period(temp$Length),unit="min")
 ```
@@ -152,7 +164,7 @@ wpm<-temp$total_words/temp$Length
 temp<-cbind(temp,wpm)
 ```
 
-__7. Plot the new variable__
+__7. Plot wpm for each song__
 ```{r}
 #Plot wpm for each song in each album
 wpm_song <- ggplot(temp,aes(x=temp$Title,y=temp$wpm))+
@@ -164,7 +176,7 @@ wpm_song <- ggplot(temp,aes(x=temp$Title,y=temp$wpm))+
 wpm_song
 ```
 
-__Second plot__ 
+__8. Plot wpm for each album__ 
 ```{r}
 #Plot wpm for each album
 wpm_album <- ggplot(temp,aes(x=temp$Album,y=temp$wpm))+
@@ -178,27 +190,34 @@ ggsave("Words Per Minute by Song", plot = wpm_song, device = png, width = 1000, 
 ggsave("Words Per Minute by Album", plot = wpm_album, device = png, width = 1000, height = 800, limitsize = F)
 ```
 
-__8. Make some statistical analysis on wpm__
+__9. Wpm by albums data.__
 ```{r}
-#Get stats about mean, variance, sd, median, and range for wpm in each album
+#Get started with mean, variance, sd, median, and range for wpm in each album
 stat_wpm<-temp%>%
   group_by(Album)%>%
   summarise(mean_wpm = mean(wpm), 
             var_wpm = var(wpm), 
             sd_wpm = sd(wpm),
             median_wpm = median(wpm),
-            range_wpm = max(wpm)-min(wpm))
+            range_wpm = max(wpm)-min(wpm))%>%
+  arrange(mean_wpm)
 print(stat_wpm)
+```
+__By data, "reputation" has the largest wpm and "folklove" has the smallest.__
 
+__10. Analyze how wpm changes between different writers__
+```{r}
 #Study how does wpm differs from Taylor being the only writer and Taylor writing with others
 temp$Writer.s.<-gsub("Taylor Swift", "Swift", temp$Writer.s.)
 temp1<-filter(temp, temp$Writer.s.=="Swift")
 temp2<-filter(temp, temp$Writer.s.!="Swift")
 (by_Swift_only<-summary(temp1$wpm))
 (by_Swift_others<-summary(temp2$wpm))
-#Lyrics co-composed by Swift and others are more intense in terms of wpm than lyrics written by only Swift
+```
+__Lyrics co-composed by Swift and others are more intense in terms of wpm than lyrics written by only Swift.__
 
-#Study how does wpm changes corresponding to song length
+__11.Study how does wpm changes corresponding to song length__
+```{r}
 #Fit the data into a linear regression model and make an ANOVA
 lm_1<-lm(temp$wpm~temp$Length)
 print(lm_1)
@@ -217,8 +236,9 @@ WPM_Length
 #Save the plot. Again the plot saved is very small so I adjusted width and height
 ggsave(filename = "WPM versus Song Length", plot = WPM_Length, device = png, limitsize = F, width = 1000, height = 800)
 ```
+__From the regression model we can see that Wpm and Song Length have a strong negative correlation.__
 
-__9. Save mean of wpm as a text file__
+__12. Save mean of wpm as a text file__
 ```{r}
 #Subset variables album and mean and save as a text file
 stat_wpm%>%
@@ -226,3 +246,5 @@ stat_wpm%>%
   write.table(file = "Mean_wpm_albums", sep = "   ", quote = F, )
 ```
 
+## Conclustion
+**We studied total words for each album, finding out that "reputation" has the most words, "Taylor Swift" is with the least words. Taylor Swift loves using first-person pronouns, and "male" pronouns like "he" and "him" are her second favorite probably because of her songs are mostly talking about love. "female" pronouns and "non-binary" comes in third and fourth. In terms of wpm, "reputation is still the one with the most words, and "folklove" takes the least one's position. Taylor tends to write less words when she composes along, and with others wpm would become larger.**
